@@ -1,21 +1,19 @@
+let margin = {top: 50, right: 50, bottom: 50, left: 50}
+let width = 1000
+let height = 500
+
+let padding = {top: 60, right: 60, bottom: 60, left: 60}
+
 d3.dsv(",", "./data/atl_weather_20to22.csv", function(d) {
     return {
         date: new Date(d['Date']),
-        tempMax: +d['TempMax']
+        tempMax: +d['TempMax'],
+        tempMin: +d['TempMin']
     }
 }).then(function(data) {
 
-    console.log(data)
-
-    let margin = {top: 50, right: 50, bottom: 50, left: 50}
-    let width = 1000
-    let height = 500
-
-    let padding = {top: 60, right: 60, bottom: 60, left: 60}
-
     let xScale = d3.scaleTime();
     let yScale = d3.scaleLinear();
-
 
     let minDate = data[0].date;
     let maxDate = data[data.length - 1].date;
@@ -84,3 +82,65 @@ d3.dsv(",", "./data/atl_weather_20to22.csv", function(d) {
         .attr("transform", "translate(-45, 200), rotate(270)");
 
 })
+
+
+d3.dsv(",", "./data/countries.csv", function(d) {
+    return {
+        countryName: d['Country'],
+        totalPopulation: d['PopulationTotal'],
+        color: getRandomColor()
+    }
+}).then(function(data) {
+
+    console.log(data)
+
+    let maxTotalPopulation = d3.max(data, d => d.totalPopulation)
+
+    let xScale = d3
+        .scaleBand()
+        .domain(data.map((d) => d.countryName))
+        .rangeRound([0, width])
+        .padding(0.1);
+
+    let yScale = d3.scaleLinear().domain([0, maxTotalPopulation]).range([height, 0]);
+
+    let svg = d3.select("#bar_chart")
+        .attr('height', height + margin.top + margin.bottom)
+        .attr('width', width + margin.left + margin.right)
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+
+    svg.selectAll('.bar')
+        .data(data)
+        .enter()
+        .append('rect')
+        .classed('bar', true)
+        .attr('width', xScale.bandwidth())
+        .attr('height', (d) => height - yScale(d.totalPopulation))
+        .attr('x', d => xScale(d.countryName))
+        .attr('y', d => yScale(d.totalPopulation))
+        .attr('fill', d => d.color)
+        .attr("transform", "translate(100, 40)");
+
+    svg.append("g")
+        .attr("id", "bar_chart_x_axis")
+        .attr("class", "axis")
+        .attr("transform", "translate(100," + (height + 40) + ")")
+        .call(d3.axisBottom(xScale))
+        .selectAll("text")
+        .style("text-anchor", "end")
+        .attr("dx", "-.8em")
+        .attr("dy", ".15em")
+        .attr("transform", "rotate(-65)");;
+
+})
+
+
+function getRandomColor() {
+    let letters = '0123456789ABCDEF';
+    let color = '#';
+
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
