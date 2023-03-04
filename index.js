@@ -60,7 +60,7 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/atl_weath
         .datum(data)
         .attr("d", line)
         .attr("stroke-width", 3)
-        .attr("stroke", d3.schemeCategory10[1])
+        .attr("stroke", d3.schemeCategory10[3])
         .attr("fill", "None")
         .attr("transform", "translate(100, 40)");
 
@@ -69,7 +69,7 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/atl_weath
         .datum(data)
         .attr("d", line2)
         .attr("stroke-width", 3)
-        .attr("stroke", d3.schemeCategory10[2])
+        .attr("stroke", d3.schemeCategory10[0])
         .attr("fill", "None")
         .attr("transform", "translate(100, 40)");
 
@@ -111,18 +111,27 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/state_cri
         robberyTotal: parseInt(d["Data.Totals.Violent.Robbery"])
     }
 }).then(function(data) {
-    
 
+    data = data.filter(d => d.population >= 100000000)
+    
     let maxAssaultTotal = d3.max(data, d => d.assaultTotal);
     let maxRobberyTotal = d3.max(data, d => d.robberyTotal);
+    let maxPopulation = d3.max(data, d => d.population);
 
-    let xScale = d3.scaleLinear().domain([0, maxAssaultTotal]).range([0, width])
+    let xScale = d3.scaleLinear().domain([0, maxAssaultTotal]).range([0, width - margin.right])
     let yScale = d3.scaleLinear().domain([0, maxRobberyTotal]).range([height, 0])
 
     let svg = d3.select("#scatter_plot")
     .attr('height', height + margin.top + margin.bottom)
     .attr('width', width + margin.left + margin.right)
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+
+    svg.append("text")
+    .text("Relationship Between Assault Count and Robbery Count")
+    .attr("id", 'line_chart_title')
+    .attr("font-size", 22)
+    .attr("x", width /2 - padding.right * 2)
+    .attr("y", padding.top / 3)
 
     let circleGroup = svg.append('g').attr('transform', 'translate(' + 100 + ',' + 0 + ')');
 
@@ -134,24 +143,35 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/state_cri
         .attr('class', 'myDots')
         .attr("cx", d => xScale(d.assaultTotal))
         .attr("cy", d => yScale(d.robberyTotal))
-        .attr("r", d => d.population / 50000000)
-        .style("fill", "#69b3a2")
+        .attr("r", d => (d.population / maxPopulation) * 10.0)
+        .style("fill", d3.schemeCategory10[9])
 
     //add x axis
     circleGroup.append("g")
         .attr("transform", `translate(0, ${height})`)
-        .call(d3.axisBottom(xScale));
+        .call(d3.axisBottom(xScale))
+        .append("text")
+        .text("Violent Assault Count")
+        .attr("fill", "black")
+        .attr("font-size", 16)
+        .attr("transform", "translate(500, 60)");;
 
     //add y axis 
     circleGroup.append("g")
-        .call(d3.axisLeft(yScale));
+        .call(d3.axisLeft(yScale))
+        .append("text")
+        .text("Violent Robbery Count")
+        .attr("fill", "black")
+        .attr("font-size", 16)
+        .attr("transform", "translate(-65, 200), rotate(270)");
+;
 
 })
 
 d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/countries.csv", function(d) {
     return {
         countryName: d['Country'],
-        totalPopulation: d['PopulationTotal'],
+        totalPopulation: +d['PopulationTotal'],
         color: getRandomColor(),
         year: +d['Year']
     }
@@ -165,16 +185,24 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/countries
         .scaleBand()
         .domain(data.map((d) => d.countryName))
         .rangeRound([0, width])
+        .padding(0.1)
 
     let yScale = d3.scaleLinear().domain([0, maxTotalPopulation]).range([height, 0]);
 
     let svg = d3.select("#bar_chart")
-        .attr('height', height + margin.top + margin.bottom)
+        .attr('height', height + margin.top * 3)
         .attr('width', width + margin.left + margin.right)
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    svg.append("text")
+        .text("Total Population of South American and European Countries (Year 2013)")
+        .attr("id", 'line_chart_title')
+        .attr("font-size", 22)
+        .attr("x", width / 2 - margin.right * 4)
+        .attr("y", padding.top / 3)
 
 
-    svg.append('g').attr('id', 'bar_container')
+    svg.append('g').attr('id', 'bar_container').attr("transform", "translate(0," + margin.top + ")");;
 
     svg.select("#bar_container")
         .selectAll('.bar')
@@ -215,7 +243,14 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/countries
         .text("Population")
         .attr("fill", "black")
         .attr("font-size", 16)
-        .attr("transform", "translate(-65, 200), rotate(270)");;
+        .attr("transform", "translate(-65, 200), rotate(270)");
+
+    svg.select('#bar_chart_x_axis').append('g')
+        .append("text")
+        .text("Country")
+        .attr("fill", "black")
+        .attr("font-size", 16)
+        .attr("transform", "translate(500, 60)");
 
 
 
@@ -225,6 +260,6 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/countries
 
 
 function getRandomColor() {
-    return '#'+Math.floor(Math.random() * 16777215).toString(16);
+    return '#'+ Math.floor(Math.random() * 12777215 + 2777215).toString(16);
 }
 
