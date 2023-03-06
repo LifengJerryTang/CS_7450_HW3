@@ -1,16 +1,8 @@
+let width = 1200
+let height = 600
 let margin = {top: 50, right: 50, bottom: 50, left: 50}
-let width = 1100
-let height = 500
-let padding = {top: 60, right: 60, bottom: 60, left: 60}
+let padding = {top: 50, right: 50, bottom: 50, left: 50}
 
-var aspect = width / height,
-    chart = d3.select('#chart');
-d3.select(window)
-  .on("resize", function() {
-    var targetWidth = chart.node().getBoundingClientRect().width;
-    chart.attr("width", targetWidth);
-    chart.attr("height", targetWidth / aspect);
-  });
 
 d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/atl_weather_20to22.csv", function(d) {
     return {
@@ -106,9 +98,9 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/atl_weath
 
 d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/state_crime.csv", function(d) {
     return {
-        population: parseInt(d["Data.Population"]),
-        assaultTotal: parseInt(d["Data.Totals.Violent.Assault"]),
-        robberyTotal: parseInt(d["Data.Totals.Violent.Robbery"])
+        population: +d["Data.Population"],
+        assaultTotal: +d["Data.Totals.Violent.Assault"],
+        robberyTotal: +d["Data.Totals.Violent.Robbery"]
     }
 }).then(function(data) {
 
@@ -171,15 +163,38 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/state_cri
 d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/countries.csv", function(d) {
     return {
         countryName: d['Country'],
-        totalPopulation: +d['PopulationTotal'],
-        color: getRandomColor(),
-        year: +d['Year']
+        populationGrowth: +d['UrbanPopulationPercentGrowth'],
     }
 }).then(function(data) {
 
-    data = data.filter(d => d.year === 2013)
+    aggregatedData = Array.from(d3.rollup(data, v => d3.mean(v, d => d.populationGrowth), d => d.countryName))
 
-    let maxTotalPopulation = d3.max(data, d => d.totalPopulation)
+    data = []
+
+    let maxAvgPopGrowth = null;
+    let minAvgPopGrowth = null;
+
+    aggregatedData.forEach(d => {
+
+        if (!maxAvgPopGrowth) {
+            maxAvgPopGrowth = d[1];
+        } else {
+            maxAvgPopGrowth = Math.max(d[1], maxAvgPopGrowth);
+        }
+
+        if (!minAvgPopGrowth) {
+            minAvgPopGrowth = d[1];
+        } else {
+            minAvgPopGrowth = Math.min(d[1], minAvgPopGrowth);
+        }
+
+        data.push({
+            countryName: d[0],
+            avgPopGrowth: d[1],
+            color: getRandomColor()
+        })
+    })
+
 
     let xScale = d3
         .scaleBand()
@@ -187,7 +202,7 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/countries
         .rangeRound([0, width])
         .padding(0.1)
 
-    let yScale = d3.scaleLinear().domain([0, maxTotalPopulation]).range([height, 0]);
+    let yScale = d3.scaleLinear().domain([minAvgPopGrowth,  maxAvgPopGrowth]).range([height, 0]);
 
     let svg = d3.select("#bar_chart")
         .attr('height', height + margin.top * 3)
@@ -195,10 +210,10 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/countries
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     svg.append("text")
-        .text("Total Population of South American and European Countries (Year 2013)")
+        .text("Average Urban Population Growth of South American and European Countries (Year 1980 - 2013)")
         .attr("id", 'line_chart_title')
         .attr("font-size", 22)
-        .attr("x", width / 2 - margin.right * 4)
+        .attr("x", width / 2 - margin.right * 6)
         .attr("y", padding.top / 3)
 
 
@@ -211,9 +226,9 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/countries
         .append('rect')
         .classed('bar', true)
         .attr('width', xScale.bandwidth())
-        .attr('height', (d) => height - yScale(d.totalPopulation))
+        .attr('height', (d) => Math.abs(yScale(d.avgPopGrowth) - yScale(0)))
         .attr('x', d => xScale(d.countryName))
-        .attr('y', d => yScale(d.totalPopulation) )
+        .attr('y', d => yScale(Math.max(0, d.avgPopGrowth)) )
         .attr('fill', d => d.color)
         .attr("transform", "translate(100, 0)");
 
@@ -239,8 +254,9 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/countries
         .attr("class", "axis")
         .attr("transform", "translate(" + 100 + ", "+ "0)")
         .call(d3.axisLeft(yScale))
-        .append("text")
-        .text("Population")
+
+    svg.select("#bar_chart_y_axis").append("text")
+        .text("Average Urban Population Growth")
         .attr("fill", "black")
         .attr("font-size", 16)
         .attr("transform", "translate(-65, 200), rotate(270)");
@@ -250,14 +266,8 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/countries
         .text("Country")
         .attr("fill", "black")
         .attr("font-size", 16)
-        .attr("transform", "translate(500, 60)");
-
-
-
-
+        .attr("transform", "translate(550, 70)");
 })
-
-
 
 function getRandomColor() {
     return '#'+ Math.floor(Math.random() * 12777215 + 2777215).toString(16);
