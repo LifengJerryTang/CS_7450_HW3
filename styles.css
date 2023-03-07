@@ -1,4 +1,13 @@
 body {
-    font-family: "Open Sans";
+    font-family: Arial, "Times New Roman", serif;
+    background-color: #FFCC00
 }
 
+
+span {
+    display: block;
+}
+
+.tooltip {
+    position: relative;
+}
