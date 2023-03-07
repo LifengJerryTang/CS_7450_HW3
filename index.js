@@ -17,7 +17,14 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/countries
     let maxAvgPopGrowth = null;
     let minAvgPopGrowth = null;
 
-    aggregatedData.forEach(d => {
+
+    let svg = d3.select("#bar_chart")
+        .attr('height', height + margin.top * 3)
+        .attr('width', width + margin.left + margin.right)
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+    aggregatedData.forEach((d, i) => {
 
         if (!maxAvgPopGrowth) {
             maxAvgPopGrowth = d[1];
@@ -31,31 +38,41 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/countries
             minAvgPopGrowth = Math.min(d[1], minAvgPopGrowth);
         }
 
+        let countryColor = getRandomColor();
+
         data.push({
             countryName: d[0],
             avgPopGrowth: d[1],
-            color: getRandomColor()
+            color: countryColor
         })
+
+        svg.append("text")
+            .text(d[0])
+            .attr("font-size", 10)
+            .attr("x", width)
+            .attr("y", padding.top + i * 15 + 5)
+
+        svg.append("rect")
+            .attr('fill', countryColor)
+            .attr('width', 20)
+            .attr('height', 5)
+            .attr("x", width - padding.right / 2)
+            .attr("y", padding.top + i * 15 )
     })
 
-
+      
     let xScale = d3
         .scaleBand()
         .domain(data.map((d) => d.countryName))
-        .rangeRound([0, width])
+        .rangeRound([0, width - padding.right * 3])
         .padding(0.2)
 
     let yScale = d3.scaleLinear().domain([minAvgPopGrowth,  maxAvgPopGrowth]).range([height, 0]);
 
-    let svg = d3.select("#bar_chart")
-        .attr('height', height + margin.top * 3)
-        .attr('width', width + margin.left + margin.right)
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
     svg.append("text")
         .text("Average Urban Population Growth of South American and European Countries (Year 1980 - 2013)")
-        .attr("id", 'line_chart_title')
-        .attr("font-size", 25)
+        .attr("id", 'bar_chart_title')
+        .attr("font-size", 23)
         .attr("x", width / 2 - margin.right * 9)
         .attr("y", padding.top / 2)
         .attr("font-weight", 100)
@@ -105,8 +122,7 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/countries
         .attr('fill', d => d.color)
         .attr("transform", "translate(100, 0)")
     
-        
-
+    
     svg.select("#bar_container").append("g")
         .attr("id", "bar_chart_x_axis")
         .attr("class", "axis")
@@ -136,12 +152,7 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/countries
         .text("Country")
         .attr("fill", "black")
         .attr("font-size", 16)
-        .attr("transform", "translate(" + width / 2 + "," + (margin.top + 20) + ")");
-
-
-
-
-  
+        .attr("transform", "translate(" + (width / 2 - padding.right)+ "," + (margin.top + 20) + ")")
 
 })
 
@@ -160,8 +171,8 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/state_cri
     let maxRobberyTotal = d3.max(data, d => d.robberyTotal);
     let maxPopulation = d3.max(data, d => d.population);
 
-    let xScale = d3.scaleLinear().domain([0, maxAssaultTotal]).range([0, width - margin.right])
-    let yScale = d3.scaleLinear().domain([0, maxRobberyTotal]).range([height, 0])
+    let xScale = d3.scaleLinear().domain([0, maxAssaultTotal]).range([0, width - padding.right * 3])
+    let yScale = d3.scaleLinear().domain([0, maxRobberyTotal]).range([height - padding.top, 0])
 
     let svg = d3.select("#scatter_plot")
     .attr('height', height + margin.top + margin.bottom)
@@ -169,13 +180,21 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/state_cri
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
     svg.append("text")
-    .text("Assault Count VS. Robbery Count")
-    .attr("id", 'line_chart_title')
-    .attr("font-size", 25)
-    .attr("x", width / 2 - padding.right * 2)
+    .text("Assault Count VS. Robbery Count For US States (State Population > 150 million)")
+    .attr("id", 'dot_chart_title')
+    .attr("font-size", 23)
+    .attr("x", width / 2 - padding.right * 7)
     .attr("y", padding.top / 2)
 
-    let circleGroup = svg.append('g').attr('transform', 'translate(' + 100 + ',' + 0 + ')');
+    svg.append("text")
+    .text("(*Each dot represents a US state, and the size of each dot is proportional to the population of that state)")
+    .attr("id", 'dot_chart_title')
+    .attr("font-size", 15)
+    .attr("x", width / 2 - padding.right * 6)
+    .attr("y", padding.top)
+
+
+    let circleGroup = svg.append('g').attr('transform', 'translate(' + 0+ ',' +( margin.top + 20) + ')');
 
     circleGroup.append('g')
         .selectAll(".myDots")
@@ -193,24 +212,24 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/state_cri
         .style("fill", d3.schemeCategory10[9])
 
     //add x axis
-    svg.append("g")
+    circleGroup.append("g")
         .attr("id", "dot_plot_x_axis")
-        .attr("transform", `translate(${margin.left * 2}, ${height})`)
+        .attr("transform", `translate(${margin.left * 2}, ${height - padding.top})`)
         .call(d3.axisBottom(xScale))
         
-    svg.select("#dot_plot_x_axis").append("text")
+    circleGroup.select("#dot_plot_x_axis").append("text")
         .text("Violent Assault Count")
         .attr("fill", "black")
         .attr("font-size", 16)
-        .attr("transform", "translate(" + width / 2 + "," + margin.top + ")");
+        .attr("transform", "translate(" + (width / 2 - padding.right) + "," + margin.top + ")");
 
     //add y axis 
-    svg.append("g")
+    circleGroup.append("g")
         .attr("id", "dot_plot_y_axis")
         .attr("transform", "translate(" + margin.left * 2 + ", "+ "0)")
         .call(d3.axisLeft(yScale))
     
-    svg.select("#dot_plot_y_axis")    
+    circleGroup.select("#dot_plot_y_axis")    
         .append("text")
         .text("Violent Robbery Count")
         .attr("fill", "black")
@@ -239,7 +258,7 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/atl_weath
     let maxTempMax = d3.max(data, d => d.tempMax)
 
     xScale.domain([minDate, maxDate])
-        .range([0, width]);
+        .range([0, width - padding.right * 3]);
 
     yScale.domain([0, maxTempMax])
         .range([height, 0]);
@@ -260,9 +279,37 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/atl_weath
     svg.append("text")
         .text("Highest and Lowest Temperature by Date in Atlanta")
         .attr("id", 'line_chart_title')
-        .attr("font-size", 25)
-        .attr("x", width /2 - padding.right * 3)
+        .attr("font-size", 23)
+        .attr("x", width /2 - padding.right * 4)
         .attr("y", padding.top / 2)
+        
+    svg.append("text")
+        .text("Highest Temperature")
+        .attr("id", 'legend_1')
+        .attr("font-size", 12)
+        .attr("x", width - padding.right)
+        .attr("y", padding.top)
+    svg.append("rect")
+        .attr("id", 'legend_1_mark')
+        .attr('fill', d3.schemeCategory10[3])
+        .attr('width', 20)
+        .attr('height', 5)
+        .attr("x", width - padding.right * 1.5 )
+        .attr("y", padding.top - 6)
+
+    svg.append("text")
+        .text("Lowest Temperature")
+        .attr("id", 'legend_2')
+        .attr("font-size", 12)
+        .attr("x", width - padding.right)
+        .attr("y", padding.top + 20)
+    svg.append("rect")
+        .attr("id", 'legend_2_mark')
+        .attr('fill', d3.schemeCategory10[0])
+        .attr('width', 20)
+        .attr('height', 5)
+        .attr("x", width - padding.right * 1.5 )
+        .attr("y", padding.top + 14)
 
     svg.append('g').attr('id', 'line_chart_plot')
 
@@ -305,7 +352,7 @@ d3.dsv(",", "https://raw.githubusercontent.com/fuyuGT/CS7450-data/main/atl_weath
         .text("Month")
         .attr("fill", "black")
         .attr("font-size", 16)
-        .attr("transform", "translate(" + width / 2 + "," + margin.top + ")");
+        .attr("transform", "translate(" + (width / 2 - padding.right) + "," + margin.top + ")");
 
     svg.select("#line_chart_plot")
         .append("g")
